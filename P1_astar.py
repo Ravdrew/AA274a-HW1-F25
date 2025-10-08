@@ -176,6 +176,7 @@ class AStar(object):
             cur = self.find_best_est_cost_through()
             if cur == self.x_goal:
                 self.path = self.reconstruct_path()
+                return True
             self.open_set.remove(cur)
             self.closed_set.add(cur)
             for neighbor in self.get_neighbors(cur):
@@ -189,6 +190,7 @@ class AStar(object):
                 self.came_from[neighbor] = cur
                 self.cost_to_arrive[neighbor] = cost_to_neighbor
                 self.est_cost_through[neighbor] = cost_to_neighbor + self.distance(neighbor, self.x_goal)
+        return False
         ########## Code ends here ##########
 
 class DetOccupancyGrid2D(object):
