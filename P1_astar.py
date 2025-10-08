@@ -182,7 +182,7 @@ class AStar(object):
             for neighbor in self.get_neighbors(cur):
                 if neighbor in self.closed_set:
                     continue
-                cost_to_neighbor = self.cost_to_arrive[cur] + 1
+                cost_to_neighbor = self.cost_to_arrive[cur] + self.distance(cur, neighbor)
                 if neighbor not in self.open_set:
                     self.open_set.add(neighbor)
                 elif cost_to_neighbor > self.cost_to_arrive[neighbor]:
