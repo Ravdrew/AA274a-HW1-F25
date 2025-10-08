@@ -110,20 +110,22 @@ class RRT(object):
             x_rand = self.x_goal
             sample = np.random.uniform()
             if sample > goal_bias:
-                x_rand = (np.random.uniform(self.statespace_lo[0], self.statespace_hi[0]), np.random.uniform(self.statespace_lo[1], self.statespace_hi[1]))
-            x_near = V[self.find_nearest(V, x_rand)]
+                x_rand = np.array([np.random.uniform(self.statespace_lo[0], self.statespace_hi[0]), np.random.uniform(self.statespace_lo[1], self.statespace_hi[1])])
+            x_near_index = self.find_nearest(V, x_rand)
+            x_near = V[x_near_index]
             x_new = self.steer_towards(x_near, x_rand, eps)
-            if self.is_free_motion(x_near, x_new):
+            if self.is_free_motion(self.obstacles, x_near, x_new):
                 V[n] = x_new
-                P[n] = x_near
-                if x_new == self.x_goal:
+                P[n] = x_near_index
+                if x_new[0] == self.x_goal[0] and x_new[1] == self.x_goal[1]:
                     success = True
                     self.path = []
                     index = n
                     while index != -1:
                         self.path.append(V[index])
                         index = P[index]
-                    self.path = reversed(self.path)
+                    self.path = list(reversed(self.path))
+                    break
                 n += 1                
         ########## Code ends here ##########
 
@@ -162,7 +164,16 @@ class RRT(object):
             None, but should modify self.path
         """
         ########## Code starts here ##########
-
+        success = False
+        while not success:
+            success = True
+            index = 1
+            for i in range(1, len(self.path) - 1):
+                if self.is_free_motion(self.obstacles, self.path[index - 1], self.path[index + 1]):
+                    self.path.pop(index)
+                    success = False
+                else:
+                    index += 1
         ########## Code ends here ##########
 
 class GeometricRRT(RRT):
@@ -175,11 +186,8 @@ class GeometricRRT(RRT):
         # Consult function specification in parent (RRT) class.
         ########## Code starts here ##########
         # Hint: This should take 1-3 line.
-        index = 0
-        for i in range(len(V)):
-            if np.linalg.norm(V[i] - x) < np.linalg.norm(V[index] - x):
-                index = i
-        return index
+        distances = np.linalg.norm(V - x, axis=1) # axis 1 to compute row-wise norms
+        return np.argmin(distances)
         ########## Code ends here ##########
 
     def steer_towards(self, x1, x2, eps):
