@@ -106,7 +106,25 @@ class RRT(object):
         #   - the order in which you pass in arguments to steer_towards and is_free_motion is important
 
         ########## Code starts here ##########
-
+        for k in range(1, max_iters):
+            x_rand = self.x_goal
+            sample = np.random.uniform()
+            if sample > goal_bias:
+                x_rand = (np.random.uniform(self.statespace_lo[0], self.statespace_hi[0]), np.random.uniform(self.statespace_lo[1], self.statespace_hi[1]))
+            x_near = V[self.find_nearest(V, x_rand)]
+            x_new = self.steer_towards(x_near, x_rand, eps)
+            if self.is_free_motion(x_near, x_new):
+                V[n] = x_new
+                P[n] = x_near
+                if x_new == self.x_goal:
+                    success = True
+                    self.path = []
+                    index = n
+                    while index != -1:
+                        self.path.append(V[index])
+                        index = P[index]
+                    self.path = reversed(self.path)
+                n += 1                
         ########## Code ends here ##########
 
         plt.figure()
@@ -157,17 +175,24 @@ class GeometricRRT(RRT):
         # Consult function specification in parent (RRT) class.
         ########## Code starts here ##########
         # Hint: This should take 1-3 line.
-
+        index = 0
+        for i in range(len(V)):
+            if np.linalg.norm(V[i] - x) < np.linalg.norm(V[index] - x):
+                index = i
+        return index
         ########## Code ends here ##########
-        pass
 
     def steer_towards(self, x1, x2, eps):
         # Consult function specification in parent (RRT) class.
         ########## Code starts here ##########
         # Hint: This should take 1-4 line.
-
+        direction = x2 - x1
+        distance = np.linalg.norm(direction)
+        if distance <= eps:
+            return x2
+        else:
+            return x1 + (direction / distance) * eps
         ########## Code ends here ##########
-        pass
 
     def is_free_motion(self, obstacles, x1, x2):
         motion = np.array([x1, x2])
