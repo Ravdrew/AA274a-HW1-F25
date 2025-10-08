@@ -40,7 +40,12 @@ class AStar(object):
               useful here
         """
         ########## Code starts here ##########
-        raise NotImplementedError("is_free not implemented")
+        if (x[0] < self.statespace_lo[0] or x[0] > self.statespace_hi[0] or
+            x[1] < self.statespace_lo[1] or x[1] > self.statespace_hi[1]):
+            return False
+        if not self.occupancy.is_free(x):
+            return False
+        return True
         ########## Code ends here ##########
 
     def distance(self, x1, x2):
@@ -55,7 +60,7 @@ class AStar(object):
         HINT: This should take one line. Tuples can be converted to numpy arrays using np.array().
         """
         ########## Code starts here ##########
-        raise NotImplementedError("distance not implemented")
+        return np.linalg.norm(np.array(x1) - np.array(x2), ord=2)
         ########## Code ends here ##########
 
     def snap_to_grid(self, x):
@@ -91,7 +96,18 @@ class AStar(object):
         """
         neighbors = []
         ########## Code starts here ##########
-        raise NotImplementedError("get_neighbors not implemented")
+        up = self.snap_to_grid((x[0], x[1] + self.resolution))
+        down = self.snap_to_grid((x[0], x[1] - self.resolution))
+        left = self.snap_to_grid((x[0] - self.resolution, x[1]))
+        right = self.snap_to_grid((x[0] + self.resolution, x[1]))
+        up_right = self.snap_to_grid((x[0] + self.resolution, x[1] + self.resolution))
+        up_left = self.snap_to_grid((x[0] - self.resolution, x[1] + self.resolution))
+        down_right = self.snap_to_grid((x[0] + self.resolution, x[1] - self.resolution))
+        down_left = self.snap_to_grid((x[0] - self.resolution, x[1] - self.resolution))
+        potential_neighbors = [up, down, left, right, up_right, up_left, down_right, down_left]
+        for neighbor in potential_neighbors:
+            if self.is_free(neighbor):
+                neighbors.append(neighbor)
         ########## Code ends here ##########
         return neighbors
 
@@ -156,7 +172,23 @@ class AStar(object):
                 set membership efficiently using the syntax "if item in set".
         """
         ########## Code starts here ##########
-        raise NotImplementedError("solve not implemented")
+        while len(self.open_set) > 0:
+            cur = self.find_best_est_cost_through()
+            if cur == self.x_goal:
+                self.path = self.reconstruct_path()
+            self.open_set.remove(cur)
+            self.closed_set.add(cur)
+            for neighbor in self.get_neighbors(cur):
+                if neighbor in self.closed_set:
+                    continue
+                cost_to_neighbor = self.cost_to_arrive[cur] + 1
+                if neighbor not in self.open_set:
+                    self.open_set.add(neighbor)
+                elif cost_to_neighbor > self.cost_to_arrive[neighbor]:
+                    continue
+                self.came_from[neighbor] = cur
+                self.cost_to_arrive[neighbor] = cost_to_neighbor
+                self.est_cost_through[neighbor] = cost_to_neighbor + self.distance(neighbor, self.x_goal)
         ########## Code ends here ##########
 
 class DetOccupancyGrid2D(object):
